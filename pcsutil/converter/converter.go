@@ -26,6 +26,11 @@ const (
 	PB
 )
 
+const (
+	// InvalidChars 文件名中的非法字符
+	InvalidChars = `\/:*?"<>|`
+)
+
 // ConvertFileSize 文件大小格式化输出
 func ConvertFileSize(size int64, precision ...int) string {
 	pint := "6"
@@ -66,6 +71,11 @@ func ToBytes(str string) []byte {
 		Len:  strHeader.Len,
 		Cap:  strHeader.Len,
 	}))
+}
+
+// ToBytesUnsafe unsafe 转换, 请确保转换后的 []byte 不涉及 cap() 操作, 将 string 转换为 []byte
+func ToBytesUnsafe(str string) []byte {
+	return *(*[]byte)(unsafe.Pointer(&str))
 }
 
 // IntToBool int 类型转换为 bool
@@ -147,4 +157,19 @@ func ShortDisplay(s string, num int) string {
 	}
 
 	return sb.String()
+}
+
+// TrimPathInvalidChars 清除文件名中的非法字符
+func TrimPathInvalidChars(fpath string) string {
+	buf := make([]byte, 0, len(fpath))
+
+	for _, c := range ToBytesUnsafe(fpath) {
+		if strings.ContainsRune(InvalidChars, rune(c)) {
+			continue
+		}
+
+		buf = append(buf, c)
+	}
+
+	return ToString(buf)
 }
